@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: user-service
+
+  # H2 Database (temporary)
+  datasource:
+    url: jdbc:h2:mem:userdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    ru.lifevaluable.brewflow.user: DEBUG
+    root: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+app:
+  jwt:
+    secret: "YnJld2Zsb3ctc3VwZXItc2VjcmV0LWp3dC1rZXktdGhhdC1zaG91bGQtYmUtbG9uZy1hbmQtc2VjdXJlLWZvci1wcm9kdWN0aW9uLXVzZS1vbmx5"
+    expiration-ms: 86400000
