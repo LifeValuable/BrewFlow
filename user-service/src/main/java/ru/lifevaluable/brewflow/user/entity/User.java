@@ -36,6 +36,10 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

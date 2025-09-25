@@ -34,7 +34,7 @@ public class UserService {
         User user = userRepository.findByEmail(request.email()).orElseThrow(InvalidCredentialsException::new);
         if (!passwordEncoder.matches(request.password(), user.getPassword()))
             throw new InvalidCredentialsException();
-        return new LoginResponse(user.getId(), jwtUtil.generateToken(user.getId().toString(), user.getEmail()));
+        return new LoginResponse(user.getId(), jwtUtil.generateToken(user));
     }
 
     public UserProfileResponse getProfile(String email) {

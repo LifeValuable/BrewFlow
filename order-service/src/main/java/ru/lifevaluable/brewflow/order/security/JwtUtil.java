@@ -42,6 +42,10 @@ public class JwtUtil {
         return UUID.fromString(extractClaim(token, Claims::getSubject));
     }
 
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith((SecretKey) getSigningKey())
