@@ -1,25 +1,24 @@
-package ru.lifevaluable.brewflow.order.security;
+package ru.lifevaluable.brewflow.gateway.util;
+
+import java.security.Key;
+import java.util.function.Function;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
-import java.util.UUID;
-import java.util.function.Function;
 
+@Slf4j
 @Component
 public class JwtUtil {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
-
-    @Value("${app.jwt.expiration-ms}")
-    private int jwtExpirationMs;
 
     private Key getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
@@ -34,12 +33,18 @@ public class JwtUtil {
                     .parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException ex) {
+            log.debug("validation token error: {}", ex.getMessage());
+            log.debug("claims: {}", extractAllClaims(token).entrySet().toArray());
             return false;
         }
     }
 
-    public UUID extractId(String token) {
-        return UUID.fromString(extractClaim(token, Claims::getSubject));
+    public String extractUserId(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractEmail(String token) {
+        return extractClaim(token, claims -> claims.get("email", String.class));
     }
 
     public String extractRole(String token) {

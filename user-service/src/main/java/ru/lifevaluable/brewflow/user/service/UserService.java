@@ -13,6 +13,8 @@ import ru.lifevaluable.brewflow.user.mapper.UserMapper;
 import ru.lifevaluable.brewflow.user.repository.UserRepository;
 import ru.lifevaluable.brewflow.user.security.JwtUtil;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -39,6 +41,11 @@ public class UserService {
 
     public UserProfileResponse getProfile(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
+        return userMapper.toUserProfile(user);
+    }
+
+    public UserProfileResponse getProfile(UUID id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
         return userMapper.toUserProfile(user);
     }
 }

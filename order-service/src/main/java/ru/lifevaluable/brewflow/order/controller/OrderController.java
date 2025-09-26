@@ -74,8 +74,7 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<OrderResponse> createOrderFromCart(Authentication auth) {
         UUID userId = (UUID) auth.getPrincipal();
-        String jwtToken = (String) auth.getCredentials();
-        UserData userData = userServiceClient.getUserByToken(jwtToken);
+        UserData userData = userServiceClient.getUser(userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrderFromCart(userId, userData));
     }
 }
