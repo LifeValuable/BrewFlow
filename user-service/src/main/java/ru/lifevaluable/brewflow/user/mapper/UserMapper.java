@@ -12,6 +12,7 @@ import ru.lifevaluable.brewflow.user.entity.User;
 public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "role", ignore = true)
     User toUser(RegisterRequest request);
     RegisterResponse toRegisterResponse(User user);
     UserProfileResponse toUserProfile(User user);

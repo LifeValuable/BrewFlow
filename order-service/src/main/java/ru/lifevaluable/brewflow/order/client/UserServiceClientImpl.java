@@ -13,6 +13,8 @@ import ru.lifevaluable.brewflow.order.exception.InvalidTokenException;
 import ru.lifevaluable.brewflow.order.exception.UserServiceException;
 import ru.lifevaluable.brewflow.order.exception.UserServiceUnavailableException;
 
+import java.util.UUID;
+
 
 @Component
 @RequiredArgsConstructor
@@ -26,12 +28,11 @@ public class UserServiceClientImpl implements UserServiceClient {
         backoff = @Backoff(delay = 1000L, multiplier = 2)
     )
     @Override
-    public UserData getUserByToken(String jwtToken) throws UserServiceException {
+    public UserData getUser(UUID userId) throws UserServiceException {
         try {
             return restClient
                     .get()
-                    .uri("/users/profile")
-                    .header("Authorization", ensureBearerPrefix(jwtToken))
+                    .uri("/internal/users/" + userId.toString())
                     .retrieve()
                     .body(UserData.class);
 

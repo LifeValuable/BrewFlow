@@ -1,0 +1,78 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            # User Service Routes
+            - id: user-auth
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+
+            - id: user-profile
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/users/**
+              filters:
+                - StripPrefix=1
+
+            # Order Service Routes
+            - id: order-products
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/products/**
+              filters:
+                - StripPrefix=1
+
+            - id: order-cart
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/cart/**
+              filters:
+                - StripPrefix=1
+
+            - id: order-orders
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - StripPrefix=1
+
+            - id: order-internal
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/internal/**
+                - Header=Authorization, Bearer.+
+              filters:
+                - StripPrefix=1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    ru.lifevaluable.brewflow.gateway: DEBUG
+    root: TRACE
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+app:
+  jwt:
+    secret: "YnJld2Zsb3ctc3VwZXItc2VjcmV0LWp3dC1rZXktdGhhdC1zaG91bGQtYmUtbG9uZy1hbmQtc2VjdXJlLWZvci1wcm9kdWN0aW9uLXVzZS1vbmx5"
+    expiration-ms: 86400000
+
