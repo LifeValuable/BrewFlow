@@ -31,7 +31,6 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-# Management endpoints
 management:
   endpoints:
     web:
@@ -40,13 +39,19 @@ management:
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
 
 logging:
   level:
     ru.lifevaluable.brewflow.order: DEBUG
     root: DEBUG
   pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{HH:mm:ss.SSS} [%15.15t] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
 
 app:
   jwt:
