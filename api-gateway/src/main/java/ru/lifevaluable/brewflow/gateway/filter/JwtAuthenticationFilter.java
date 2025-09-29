@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import ru.lifevaluable.brewflow.gateway.config.SecurityProperties;
 import ru.lifevaluable.brewflow.gateway.util.JwtUtil;
 
 import java.util.List;
@@ -20,12 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private final JwtUtil jwtUtil;
-
-    private static final List<String> PUBLIC_PATHS = List.of(
-            "/api/auth/register",
-            "/api/auth/login",
-            "/api/products"
-    );
+    private final SecurityProperties securityProperties;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -81,7 +77,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+        return securityProperties.getPublicPaths().stream().anyMatch(path::startsWith);
     }
 
     private Mono<Void> handleUnauthorized(ServerWebExchange exchange) {

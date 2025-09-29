@@ -81,4 +81,9 @@ app:
   jwt:
     secret: "YnJld2Zsb3ctc3VwZXItc2VjcmV0LWp3dC1rZXktdGhhdC1zaG91bGQtYmUtbG9uZy1hbmQtc2VjdXJlLWZvci1wcm9kdWN0aW9uLXVzZS1vbmx5"
     expiration-ms: 86400000
+  security:
+    public-paths:
+        - /api/auth/register
+        - /api/auth/login
+        - /api/products
 
