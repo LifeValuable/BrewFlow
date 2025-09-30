@@ -3,6 +3,7 @@ package ru.lifevaluable.brewflow.order.service;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.lifevaluable.brewflow.order.dto.OrderResponse;
 import ru.lifevaluable.brewflow.order.dto.OrdersHistoryResponse;
@@ -20,6 +21,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -30,6 +32,7 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrderFromCart(UUID userId, UserData userData) {
+        log.debug("Create order from cart: userId={}", userId);
         validateNotNull(userId, "User id");
         validateNotNull(userData, "User data");
         if (!userId.equals(userData.id())) {
@@ -70,23 +73,27 @@ public class OrderService {
         //отправить запрос об оплате
 
         Order savedOrder = orderRepository.save(order);
-        cartRepository.removeByIdUserId(userId);
+        log.info("Created order for user: userId={}, orderId={}", userId, savedOrder.getId());
+        int deletedItems = cartRepository.removeByIdUserId(userId);
+        log.info("Cleaned user cart: userId={}, deletedItems={}", userId, deletedItems);
         return orderMapper.toDTO(savedOrder);
     }
 
     public OrderResponse getOrderDetails(UUID orderId, UUID userId) {
+        log.debug("Get order details: userId={}, orderId={}", orderId, userId);
         validateNotNull(orderId, "Order id");
         validateNotNull(userId, "User id");
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId));
         // пользователю не обязательно знать, что запрошен чужой заказ
         if (!order.getUserId().equals(userId))
             throw new OrderNotFoundException(orderId);
-
+        log.info("Get order details: userId={}, orderId={}", orderId, userId);
         return orderMapper.toDTO(order);
     }
 
     @Transactional
     public void updateOrderStatus(UUID orderId, UUID userId, OrderStatus currentStatus, OrderStatus newStatus) {
+        log.debug("Update order status: userId={}, orderId={}, currentStatus={}, newStatus={}", userId, orderId, currentStatus, newStatus);
         validateNotNull(orderId, "Order id");
         validateNotNull(userId, "User id");
         validateNotNull(currentStatus, "Current status");
@@ -100,9 +107,11 @@ public class OrderService {
             throw new OrderNotFoundException(orderId);
 
         order.setStatus(newStatus);
+        log.info("Update order status: userId={}, orderId={}, currentStatus={}, newStatus={}", userId, orderId, currentStatus, newStatus);
     }
 
     public OrdersHistoryResponse getOrdersHistory(UUID userId) {
+        log.debug("Get orders history: userId={}", userId);
         validateNotNull(userId, "User id");
         return orderMapper.toHistoryDTO(orderRepository.findByUserIdOrderByCreatedAtDesc(userId));
     }

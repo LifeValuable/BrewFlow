@@ -1,6 +1,9 @@
 package ru.lifevaluable.brewflow.order.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ru.lifevaluable.brewflow.order.dto.ProductResponse;
 import ru.lifevaluable.brewflow.order.entity.Product;
@@ -11,6 +14,7 @@ import ru.lifevaluable.brewflow.order.repository.ProductRepository;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -18,16 +22,21 @@ public class ProductService {
     private final ProductMapper productMapper;
 
     public List<ProductResponse> getAllProducts() {
-        return productRepository.findAll()
-                .stream()
+        log.debug("Getting all products");
+        List<Product> products = productRepository.findAll();
+        log.info("Retrieved {} products", products.size());
+        return products.stream()
                 .map(productMapper::toDTO)
                 .toList();
+
     }
 
     public ProductResponse getProductById(UUID id) {
+        log.debug("Get product by id {}", id);
         if (id == null)
             throw new IllegalArgumentException("Product id can not be null");
         Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id));
+        log.info("Retrieved product: productId={}", id);
         return productMapper.toDTO(product);
     }
 }

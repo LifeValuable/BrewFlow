@@ -56,11 +56,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                     .header("X-User-Role", role)
                     .build();
 
-            log.debug("send request forward");
             return chain.filter(exchange.mutate().request(modifiedRequest).build());
 
         } catch (Exception e) {
-            log.debug("can't mutate request");
             return handleUnauthorized(exchange);
         }
     }
