@@ -31,6 +31,15 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        allow.auto.create.topics: true
+        spring.json.type.mapping: orderCreated:ru.lifevaluable.brewflow.order.event.OrderCreatedEvent
+
 management:
   endpoints:
     web:

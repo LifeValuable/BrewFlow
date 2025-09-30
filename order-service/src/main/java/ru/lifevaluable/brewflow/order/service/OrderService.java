@@ -9,6 +9,7 @@ import ru.lifevaluable.brewflow.order.dto.OrderResponse;
 import ru.lifevaluable.brewflow.order.dto.OrdersHistoryResponse;
 import ru.lifevaluable.brewflow.order.dto.UserData;
 import ru.lifevaluable.brewflow.order.entity.*;
+import ru.lifevaluable.brewflow.order.event.OrderCreatedEvent;
 import ru.lifevaluable.brewflow.order.exception.*;
 import ru.lifevaluable.brewflow.order.mapper.OrderMapper;
 import ru.lifevaluable.brewflow.order.repository.CartItemRepository;
@@ -18,6 +19,7 @@ import ru.lifevaluable.brewflow.order.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,6 +31,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final CartItemRepository cartRepository;
     private final OrderMapper orderMapper;
+    private final EventPublisher eventPublisher;
 
     @Transactional
     public OrderResponse createOrderFromCart(UUID userId, UserData userData) {
@@ -74,6 +77,27 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         log.info("Created order for user: userId={}, orderId={}", userId, savedOrder.getId());
+        List<OrderCreatedEvent.OrderItemEvent> eventItems = savedOrder.getItems().stream()
+                .map(item -> new OrderCreatedEvent.OrderItemEvent(
+                        item.getProduct().getId(),
+                        item.getProduct().getName(),
+                        item.getQuantity(),
+                        item.getPriceAtTime()
+                ))
+                .toList();
+
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                savedOrder.getId(),
+                userId,
+                userData.email(),
+                userData.firstName(),
+                userData.lastName(),
+                savedOrder.getTotalPrice(),
+                eventItems,
+                LocalDateTime.now()
+        );
+        eventPublisher.publishOrderCreated(event);
+
         int deletedItems = cartRepository.removeByIdUserId(userId);
         log.info("Cleaned user cart: userId={}, deletedItems={}", userId, deletedItems);
         return orderMapper.toDTO(savedOrder);
