@@ -19,7 +19,7 @@ public class EventPublisher {
         String topicName = "order-events";
         String key = event.orderId().toString();
         log.debug("Publishing OrderCreated event: orderId={}, userId={}", event.orderId(), event.userId());
-
+        log.debug("orderCreated={}", event.toString());
         CompletableFuture<SendResult<String, Object>> future = kafkaTemplate.send(topicName, key, event);
         future.whenComplete((result, exception) -> {
             if (exception == null) {

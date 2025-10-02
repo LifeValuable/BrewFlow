@@ -58,7 +58,7 @@ public class OrderService {
         order.setUserFirstName(userData.firstName());
         order.setUserLastName(userData.lastName());
         order.setUserEmail(userData.email());
-        order.setStatus(OrderStatus.CREATED);
+        order.setStatus(OrderStatus.RESERVED);
 
         try {
             for (OrderItem orderItem : orderItems) {
@@ -72,8 +72,6 @@ public class OrderService {
         catch (OptimisticLockException ex) {
             throw new OrderCreationFailedException("Order cannot be processed due to inventory changes. Please try again.");
         }
-
-        //отправить запрос об оплате
 
         Order savedOrder = orderRepository.save(order);
         log.info("Created order for user: userId={}, orderId={}", userId, savedOrder.getId());
@@ -132,6 +130,32 @@ public class OrderService {
 
         order.setStatus(newStatus);
         log.info("Update order status: userId={}, orderId={}, currentStatus={}, newStatus={}", userId, orderId, currentStatus, newStatus);
+    }
+
+    @Transactional
+    public void cancelOrder(UUID orderId, UUID userId) {
+        log.debug("Cancelling order: orderId={}, userId={}", orderId, userId);
+
+        Order order = orderRepository.findByIdAndUserIdForUpdate(orderId, userId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            log.warn("Order is already cancelled: orderId={}, userId={}", orderId, userId);
+            return;
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        for (OrderItem item : order.getItems()) {
+            Product product = item.getProduct();
+            int newStock = product.getStockQuantity() + item.getQuantity();
+            product.setStockQuantity(newStock);
+            productRepository.save(product);
+
+            log.debug("Returned {} units of {} to stock. New stock: {}",
+                    item.getQuantity(), product.getName(), newStock);
+        }
+
+        log.info("Order is cancelled: orderId={}, userId={}", orderId, userId);
     }
 
     public OrdersHistoryResponse getOrdersHistory(UUID userId) {

@@ -28,7 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/products", "/products/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/internal/**").hasAnyRole("ADMIN", "SERVICE")
+                        .requestMatchers("/internal/**").hasRole("ADMIN")
                         .anyRequest().hasRole("USER")
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
