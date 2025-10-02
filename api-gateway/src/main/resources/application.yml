@@ -51,7 +51,6 @@ spring:
               uri: http://localhost:8082
               predicates:
                 - Path=/api/internal/**
-                - Header=Authorization, Bearer.+
               filters:
                 - StripPrefix=1
 
@@ -71,9 +70,11 @@ management:
       endpoint: http://localhost:9411/api/v2/spans
 
 logging:
+  charset:
+    console: UTF-8
+    file: UTF-8
   level:
-    ru.lifevaluable.brewflow.gateway: DEBUG
-    root: TRACE
+    ru.lifevaluable.brewflow: DEBUG
   pattern:
     console: "%d{HH:mm:ss.SSS} [%15.15t] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
 
