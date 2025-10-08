@@ -1,0 +1,46 @@
+# syntax=docker/dockerfile:1
+ARG SERVICE_NAME
+ARG SERVICE_PORT
+
+FROM maven:3.9.9-eclipse-temurin-21-jammy AS builder
+
+ARG SERVICE_NAME
+
+WORKDIR /workspace
+
+COPY pom.xml .
+COPY user-service/pom.xml user-service/
+COPY order-service/pom.xml order-service/
+COPY payment-service/pom.xml payment-service/
+COPY notification-service/pom.xml notification-service/
+COPY api-gateway/pom.xml api-gateway/
+
+RUN mvn dependency:go-offline -pl ${SERVICE_NAME} -am -B
+
+COPY ${SERVICE_NAME}/src ${SERVICE_NAME}/src
+
+RUN mvn clean package -pl ${SERVICE_NAME} -am -DskipTests -B
+
+RUN mkdir -p ${SERVICE_NAME}/target/extracted && \
+    java -Djarmode=layertools -jar ${SERVICE_NAME}/target/*.jar extract --destination ${SERVICE_NAME}/target/extracted
+
+FROM eclipse-temurin:21-jre-jammy
+
+ARG SERVICE_NAME
+ARG SERVICE_PORT
+
+RUN addgroup --system --gid 1001 appuser && \
+    adduser --system --uid 1001 --gid 1001 appuser
+
+WORKDIR /app
+
+COPY --from=builder --chown=appuser:appuser /workspace/${SERVICE_NAME}/target/extracted/dependencies/ ./
+COPY --from=builder --chown=appuser:appuser /workspace/${SERVICE_NAME}/target/extracted/spring-boot-loader/ ./
+COPY --from=builder --chown=appuser:appuser /workspace/${SERVICE_NAME}/target/extracted/snapshot-dependencies/ ./
+COPY --from=builder --chown=appuser:appuser /workspace/${SERVICE_NAME}/target/extracted/application/ ./
+
+USER appuser
+
+EXPOSE ${SERVICE_PORT}
+
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

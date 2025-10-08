@@ -1,0 +1,50 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-auth
+          uri: http://user-service:8081
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        - id: user-profile
+          uri: http://user-service:8081
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=1
+
+        - id: order-products
+          uri: http://order-service:8082
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - StripPrefix=1
+
+        - id: order-cart
+          uri: http://order-service:8082
+          predicates:
+            - Path=/api/cart/**
+          filters:
+            - StripPrefix=1
+
+        - id: order-orders
+          uri: http://order-service:8082
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1
+
+        - id: order-internal
+          uri: http://order-service:8082
+          predicates:
+            - Path=/api/internal/**
+          filters:
+            - StripPrefix=1
+
+management:
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
