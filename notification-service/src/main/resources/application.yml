@@ -1,0 +1,56 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: notification-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    client-id: ${spring.application.name}
+    consumer:
+      group-id: notification-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "ru.lifevaluable.brewflow.*"
+        spring.json.type.mapping: "orderCreated:ru.lifevaluable.brewflow.notification.event.OrderCreatedEvent,paymentProcessed:ru.lifevaluable.brewflow.notification.event.PaymentProcessedEvent"
+
+  mail:
+    host: smtp.yandex.ru
+    port: 465
+    protocol: smtps
+    username: ${BREWFLOW_MAIL_USERNAME}
+    password: ${BREWFLOW_MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+          auth: true
+      from: ${BREWFLOW_MAIL_USERNAME}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
+logging:
+  charset:
+    console: UTF-8
+    file: UTF-8
+  level:
+    ru.lifevaluable.brewflow: TRACE
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%15.15t] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"

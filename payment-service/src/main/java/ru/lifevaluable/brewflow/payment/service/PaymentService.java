@@ -34,6 +34,7 @@ public class PaymentService {
                 paymentId,
                 orderEvent.orderId(),
                 orderEvent.userId(),
+                orderEvent.userEmail(),
                 orderEvent.totalPrice(),
                 status,
                 errorMessage,

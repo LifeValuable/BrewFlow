@@ -1,6 +1,4 @@
-package ru.lifevaluable.brewflow.payment.event;
-
-import ru.lifevaluable.brewflow.payment.model.PaymentStatus;
+package ru.lifevaluable.brewflow.notification.event;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,4 +13,10 @@ public record PaymentProcessedEvent(
         PaymentStatus status,
         String errorMessage,  // null если успех
         LocalDateTime processedAt
-) {}
+) {
+    public enum PaymentStatus {
+        SUCCESS,
+        FAILED
+    }
+}
+
