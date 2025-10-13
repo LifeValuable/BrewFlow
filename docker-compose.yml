@@ -1,4 +1,102 @@
 services:
+  # grafana-stack
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo  # ← Изменено с /tmp/tempo на /var/tempo
+    ports:
+      - "3200:3200"
+      - "9411:9411"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - brewflow-network
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./observability/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - brewflow-network
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./observability/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - brewflow-network
+    depends_on:
+      loki:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - brewflow-network
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "--quiet", "http://localhost:9090/-/healthy" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - brewflow-network
+    depends_on:
+      loki:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # APP
   kafka:
     image: apache/kafka:4.1.0
     container_name: kafka
@@ -29,20 +127,6 @@ services:
       retries: 10
       start_period: 30s
 
-  zipkin:
-    image: openzipkin/zipkin:latest
-    container_name: zipkin
-    ports:
-      - "9411:9411"
-    networks:
-      - brewflow-network
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:9411/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
   user-service:
     image: brewflow/user-service:latest
     container_name: user-service
@@ -50,7 +134,7 @@ services:
       - brewflow-network
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411/api/v2/spans
     expose:
       - "8081"
     healthcheck:
@@ -59,9 +143,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-    depends_on:
-      zipkin:
-        condition: service_healthy
 
   order-service:
     image: brewflow/order-service:latest
@@ -72,7 +153,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       USER_SERVICE_BASE_URL: http://user-service:8081
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411/api/v2/spans
     expose:
       - "8082"
     healthcheck:
@@ -86,8 +167,6 @@ services:
         condition: service_healthy
       user-service:
         condition: service_healthy
-      zipkin:
-        condition: service_healthy
 
   payment-service:
     image: brewflow/payment-service:latest
@@ -97,7 +176,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411/api/v2/spans
     expose:
       - "8083"
     healthcheck:
@@ -109,8 +188,6 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-      zipkin:
-        condition: service_healthy
 
   notification-service:
     image: brewflow/notification-service:latest
@@ -120,7 +197,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411/api/v2/spans
       BREWFLOW_MAIL_USERNAME: ${BREWFLOW_MAIL_USERNAME}
       BREWFLOW_MAIL_PASSWORD: ${BREWFLOW_MAIL_PASSWORD}
     expose:
@@ -134,8 +211,6 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-      zipkin:
-        condition: service_healthy
 
   api-gateway:
     image: brewflow/api-gateway:latest
@@ -146,7 +221,7 @@ services:
       - brewflow-network
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411/api/v2/spans
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/actuator/health | grep UP || exit 1"]
       interval: 30s
@@ -158,11 +233,17 @@ services:
         condition: service_healthy
       order-service:
         condition: service_healthy
-      zipkin:
-        condition: service_healthy
 
 volumes:
   kafka-data:
+    driver: local
+  loki-data:
+    driver: local
+  tempo-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
     driver: local
 
 networks:
