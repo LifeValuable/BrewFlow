@@ -1,22 +1,27 @@
-global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
-
 scrape_configs:
-  # Spring Boot Actuator endpoints
   - job_name: 'spring-boot-services'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets:
-          - 'user-service:8081'
-          - 'order-service:8082'
-          - 'payment-service:8083'
-          - 'notification-service:8084'
-          - 'api-gateway:8080'
+      - targets: ['user-service:8081']
         labels:
-          application: 'brewflow'
+          application: 'user-service'
 
-  # Prometheus self-monitoring
+      - targets: ['order-service:8082']
+        labels:
+          application: 'order-service'
+
+      - targets: ['payment-service:8083']
+        labels:
+          application: 'payment-service'
+
+      - targets: ['notification-service:8084']
+        labels:
+          application: 'notification-service'
+
+      - targets: ['api-gateway:8080']
+        labels:
+          application: 'api-gateway'
+
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']

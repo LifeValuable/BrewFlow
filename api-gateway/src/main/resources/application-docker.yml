@@ -1,57 +1,60 @@
 spring:
   cloud:
     gateway:
-      routes:
-        - id: user-auth
-          uri: http://user-service:8081
-          predicates:
-            - Path=/api/auth/**
-          filters:
-            - StripPrefix=1
+      server:
+        webflux:  # ← Новый формат!
+          routes:
+            - id: user-service-route
+              uri: http://user-service:8081
+              predicates:
+                - Path=/api/users/**,/api/auth/**
+              filters:
+                - StripPrefix=0
 
-        - id: user-profile
-          uri: http://user-service:8081
-          predicates:
-            - Path=/api/users/**
-          filters:
-            - StripPrefix=1
+            - id: order-service-route
+              uri: http://order-service:8082
+              predicates:
+                - Path=/api/orders/**,/api/cart/**,/api/products/**
+              filters:
+                - StripPrefix=0
 
-        - id: order-products
-          uri: http://order-service:8082
-          predicates:
-            - Path=/api/products/**
-          filters:
-            - StripPrefix=1
+            - id: payment-service-route
+              uri: http://payment-service:8083
+              predicates:
+                - Path=/api/payments/**
+              filters:
+                - StripPrefix=0
 
-        - id: order-cart
-          uri: http://order-service:8082
-          predicates:
-            - Path=/api/cart/**
-          filters:
-            - StripPrefix=1
+            - id: notification-service-route
+              uri: http://notification-service:8084
+              predicates:
+                - Path=/api/notifications/**
+              filters:
+                - StripPrefix=0
 
-        - id: order-orders
-          uri: http://order-service:8082
-          predicates:
-            - Path=/api/orders/**
-          filters:
-            - StripPrefix=1
+            # Actuator routes для каждого сервиса
+            - id: user-actuator
+              uri: http://user-service:8081
+              predicates:
+                - Path=/actuator/user/**
+              filters:
+                - RewritePath=/actuator/user/(?<segment>.*), /actuator/$\{segment}
 
-        - id: order-internal
-          uri: http://order-service:8082
-          predicates:
-            - Path=/api/internal/**
-          filters:
-            - StripPrefix=1
+            - id: order-actuator
+              uri: http://order-service:8082
+              predicates:
+                - Path=/actuator/order/**
+              filters:
+                - RewritePath=/actuator/order/(?<segment>.*), /actuator/$\{segment}
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info,metrics,prometheus
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
   tracing:
     sampling:
