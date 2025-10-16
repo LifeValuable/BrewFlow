@@ -15,11 +15,13 @@ COPY payment-service/pom.xml payment-service/
 COPY notification-service/pom.xml notification-service/
 COPY api-gateway/pom.xml api-gateway/
 
-RUN mvn dependency:go-offline -pl ${SERVICE_NAME} -am -B
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn dependency:go-offline -pl ${SERVICE_NAME} -am -B
 
 COPY ${SERVICE_NAME}/src ${SERVICE_NAME}/src
 
-RUN mvn clean package -pl ${SERVICE_NAME} -am -DskipTests -B
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn clean package -pl ${SERVICE_NAME} -am -DskipTests -B
 
 RUN mkdir -p ${SERVICE_NAME}/target/extracted && \
     java -Djarmode=layertools -jar ${SERVICE_NAME}/target/*.jar extract --destination ${SERVICE_NAME}/target/extracted
