@@ -15,6 +15,8 @@ YELLOW := \033[0;33m
 RED    := \033[0;31m
 NC     := \033[0m
 
+export DOCKER_BUILDKIT=1
+
 help:
 	@echo "$(BLUE)BrewFlow Docker Build System$(NC)"
 	@echo ""
