@@ -1,6 +1,19 @@
 spring:
   kafka:
     bootstrap-servers: kafka:9092
+  mail:
+    host: mailhog
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+          ssl:
+            enable: false
+        debug: false
 
 management:
   endpoints:
