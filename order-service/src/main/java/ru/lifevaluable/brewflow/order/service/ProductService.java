@@ -1,18 +1,17 @@
 package ru.lifevaluable.brewflow.order.service;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 import ru.lifevaluable.brewflow.order.dto.ProductResponse;
 import ru.lifevaluable.brewflow.order.entity.Product;
 import ru.lifevaluable.brewflow.order.exception.ProductNotFoundException;
 import ru.lifevaluable.brewflow.order.mapper.ProductMapper;
 import ru.lifevaluable.brewflow.order.repository.ProductRepository;
-
-import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service

@@ -1,27 +1,36 @@
 package ru.lifevaluable.brewflow.order.service;
 
-import jakarta.persistence.OptimisticLockException;
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import ru.lifevaluable.brewflow.order.dto.OrderResponse;
-import ru.lifevaluable.brewflow.order.dto.OrdersHistoryResponse;
-import ru.lifevaluable.brewflow.order.dto.UserData;
-import ru.lifevaluable.brewflow.order.entity.*;
-import ru.lifevaluable.brewflow.order.event.OrderCreatedEvent;
-import ru.lifevaluable.brewflow.order.exception.*;
-import ru.lifevaluable.brewflow.order.mapper.OrderMapper;
-import ru.lifevaluable.brewflow.order.repository.CartItemRepository;
-import ru.lifevaluable.brewflow.order.repository.OrderRepository;
-import ru.lifevaluable.brewflow.order.repository.ProductRepository;
-
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+import jakarta.persistence.OptimisticLockException;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import ru.lifevaluable.brewflow.order.dto.OrderResponse;
+import ru.lifevaluable.brewflow.order.dto.OrdersHistoryResponse;
+import ru.lifevaluable.brewflow.order.dto.UserData;
+import ru.lifevaluable.brewflow.order.entity.CartItem;
+import ru.lifevaluable.brewflow.order.entity.Order;
+import ru.lifevaluable.brewflow.order.entity.OrderItem;
+import ru.lifevaluable.brewflow.order.entity.OrderStatus;
+import ru.lifevaluable.brewflow.order.entity.Product;
+import ru.lifevaluable.brewflow.order.event.OrderCreatedEvent;
+import ru.lifevaluable.brewflow.order.exception.EmptyCartException;
+import ru.lifevaluable.brewflow.order.exception.InsufficientStockException;
+import ru.lifevaluable.brewflow.order.exception.InvalidOrderStatusTransitionException;
+import ru.lifevaluable.brewflow.order.exception.OrderCreationFailedException;
+import ru.lifevaluable.brewflow.order.exception.OrderNotFoundException;
+import ru.lifevaluable.brewflow.order.mapper.OrderMapper;
+import ru.lifevaluable.brewflow.order.repository.CartItemRepository;
+import ru.lifevaluable.brewflow.order.repository.OrderRepository;
+import ru.lifevaluable.brewflow.order.repository.ProductRepository;
 
 @Slf4j
 @Service
@@ -105,7 +114,7 @@ public class OrderService {
         log.debug("Get order details: userId={}, orderId={}", orderId, userId);
         validateNotNull(orderId, "Order id");
         validateNotNull(userId, "User id");
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId));
+        Order order = orderRepository.findByIdWithItems(orderId).orElseThrow(() -> new OrderNotFoundException(orderId));
         // пользователю не обязательно знать, что запрошен чужой заказ
         if (!order.getUserId().equals(userId))
             throw new OrderNotFoundException(orderId);
