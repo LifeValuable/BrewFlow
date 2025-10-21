@@ -1,6 +1,8 @@
 spring:
   kafka:
     bootstrap-servers: kafka:9092
+  datasource:
+    url: jdbc:postgresql://postgres-order:5432/brewflow_orders
 
 user-service:
   base-url: http://user-service:8081

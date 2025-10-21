@@ -5,17 +5,20 @@ spring:
   application:
     name: user-service
 
-  # H2 Database (temporary)
   datasource:
-    url: jdbc:h2:mem:userdb
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://localhost:5432/brewflow_users
+    driverClassName: org.postgresql.Driver
+    username: brewflow_user
+    password: brewflow_pass
 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: public
+    open-in-view: false
 
 management:
   endpoints:

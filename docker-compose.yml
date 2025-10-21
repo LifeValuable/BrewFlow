@@ -136,6 +136,46 @@ services:
       retries: 10
       start_period: 30s
 
+  postgres-user:
+    image: postgres:16-alpine
+    container_name: postgres-user
+    environment:
+      POSTGRES_DB: brewflow_users
+      POSTGRES_USER: brewflow_user
+      POSTGRES_PASSWORD: brewflow_pass
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - brewflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brewflow_user -d brewflow_users"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  postgres-order:
+    image: postgres:16-alpine
+    container_name: postgres-order
+    environment:
+      POSTGRES_DB: brewflow_orders
+      POSTGRES_USER: brewflow_user
+      POSTGRES_PASSWORD: brewflow_pass
+    volumes:
+      - postgres-order-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - brewflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brewflow_user -d brewflow_orders"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   user-service:
     image: brewflow/user-service:latest
     container_name: user-service
@@ -152,6 +192,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+    depends_on:
+      postgres-user:
+        condition: service_healthy
 
   order-service:
     image: brewflow/order-service:latest
@@ -175,6 +218,8 @@ services:
       kafka:
         condition: service_healthy
       user-service:
+        condition: service_healthy
+      postgres-order:
         condition: service_healthy
 
   payment-service:
@@ -257,6 +302,10 @@ volumes:
   prometheus-data:
     driver: local
   grafana-data:
+    driver: local
+  postgres-user-data:
+    driver: local
+  postgres-order-data:
     driver: local
 
 networks:
