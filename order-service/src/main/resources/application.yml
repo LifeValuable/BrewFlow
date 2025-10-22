@@ -38,6 +38,22 @@ spring:
         allow.auto.create.topics: true
         spring.json.type.mapping: orderCreated:ru.lifevaluable.brewflow.order.event.OrderCreatedEvent
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      userService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        register-health-indicator: true
+
+  retry:
+    instances:
+      userService:
+        max-attempts: 3
+        wait-duration: 1s
+
+
 management:
   endpoints:
     web:

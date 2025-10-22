@@ -1,13 +1,14 @@
 package ru.lifevaluable.brewflow.order.client;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import ru.lifevaluable.brewflow.order.dto.UserData;
 import ru.lifevaluable.brewflow.order.exception.InvalidTokenException;
 import ru.lifevaluable.brewflow.order.exception.UserServiceException;
@@ -21,12 +22,8 @@ import java.util.UUID;
 public class UserServiceClientImpl implements UserServiceClient {
     private final RestClient restClient;
 
-    @Retryable(
-        retryFor = {ResourceAccessException.class, HttpServerErrorException.class},
-        noRetryFor = {HttpClientErrorException.class},
-        maxAttempts = 3,
-        backoff = @Backoff(delay = 1000L, multiplier = 2)
-    )
+    @CircuitBreaker(name = "userService", fallbackMethod = "getUserFallback")
+    @Retry(name = "userService")
     @Override
     public UserData getUser(UUID userId) throws UserServiceException {
         try {
@@ -47,8 +44,8 @@ public class UserServiceClientImpl implements UserServiceClient {
         }
     }
 
-    private String ensureBearerPrefix(String token) {
-        return token.startsWith("Bearer ") ? token : "Bearer " + token;
+    private UserData getUserFallback(UUID userId, Throwable throwable) {
+        throw new UserServiceUnavailableException("User service is temporarily unavailable. Please try again later.");
     }
 
 }
