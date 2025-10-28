@@ -3,6 +3,7 @@ package ru.lifevaluable.brewflow.order.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
 
+    @Cacheable(value = "allProducts")
     public List<ProductResponse> getAllProducts() {
         log.debug("Getting all products");
         List<Product> products = productRepository.findAll();
@@ -30,6 +32,7 @@ public class ProductService {
 
     }
 
+    @Cacheable(value = "products", key = "#id")
     public ProductResponse getProductById(UUID id) {
         log.debug("Get product by id {}", id);
         if (id == null)

@@ -1,5 +1,6 @@
 package ru.lifevaluable.brewflow.order.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -9,4 +10,4 @@ public record ProductResponse(
         String description,
         BigDecimal price,
         Integer stockQuantity
-) {}
+)  implements Serializable {}

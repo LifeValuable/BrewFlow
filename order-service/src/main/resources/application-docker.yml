@@ -3,6 +3,9 @@ spring:
     bootstrap-servers: kafka:9092
   datasource:
     url: jdbc:postgresql://postgres-order:5432/brewflow_orders
+  data:
+    redis:
+      host: redis
 
 user-service:
   base-url: http://user-service:8081
@@ -11,7 +14,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,caches
   prometheus:
     metrics:
       export:
@@ -19,6 +22,8 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+    cache:
+      instrument-cache: true
   tracing:
     sampling:
       probability: 1.0

@@ -20,6 +20,16 @@ spring:
         default_schema: public
     open-in-view: false
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+    cache:
+      type: redis
+      redis:
+        time-to-live: 86400000  # 1 день
+        cache-null-values: false
+
   kafka:
     bootstrap-servers: localhost:9092
     client-id: ${spring.application.name}

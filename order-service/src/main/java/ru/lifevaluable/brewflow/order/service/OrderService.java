@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.OptimisticLockException;
@@ -41,6 +43,7 @@ public class OrderService {
     private final CartItemRepository cartRepository;
     private final OrderMapper orderMapper;
     private final EventPublisher eventPublisher;
+    private final CacheManager cacheManager;
 
     @Transactional
     public OrderResponse createOrderFromCart(UUID userId, UserData userData) {
@@ -68,7 +71,7 @@ public class OrderService {
         order.setUserLastName(userData.lastName());
         order.setUserEmail(userData.email());
         order.setStatus(OrderStatus.RESERVED);
-
+        evictAllProductsCache();
         try {
             for (OrderItem orderItem : orderItems) {
                 orderItem.setOrder(order);
@@ -76,6 +79,7 @@ public class OrderService {
                 int reduced = productRepository.reduceStockQuantity(product.getId(), orderItem.getQuantity());
                 if (reduced == 0)
                     throw new InsufficientStockException(product.getId(), orderItem.getQuantity(), product.getStockQuantity());
+                evictProductCache(product.getId());
             }
         }
         catch (OptimisticLockException ex) {
@@ -153,17 +157,17 @@ public class OrderService {
             return;
         }
 
+        evictAllProductsCache();
         order.setStatus(OrderStatus.CANCELLED);
         for (OrderItem item : order.getItems()) {
             Product product = item.getProduct();
             int newStock = product.getStockQuantity() + item.getQuantity();
             product.setStockQuantity(newStock);
             productRepository.save(product);
-
+            evictProductCache(product.getId());
             log.debug("Returned {} units of {} to stock. New stock: {}",
                     item.getQuantity(), product.getName(), newStock);
         }
-
         log.info("Order is cancelled: orderId={}, userId={}", orderId, userId);
     }
 
@@ -188,5 +192,15 @@ public class OrderService {
                         .multiply(BigDecimal.valueOf(item.getQuantity()))
                 )
                 .reduce(zero, BigDecimal::add);
+    }
+
+    @CacheEvict(value = "products", key = "#productId")
+    private void evictProductCache(UUID productId) {
+        log.debug("Evicted product from cache: {}", productId);
+    }
+
+    @CacheEvict(value = "allProducts")
+    private void evictAllProductsCache() {
+        log.debug("Cleared all products cache");
     }
 }
