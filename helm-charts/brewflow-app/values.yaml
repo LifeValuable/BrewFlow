@@ -1,0 +1,114 @@
+global:
+  namespace: brewflow
+  imagePullPolicy: IfNotPresent
+  imageTag: "1.0.0"
+
+  secretName: "brewflow-secrets"
+  #TODO: скрыть все пароли и секреты из конфига
+
+  security:
+    jwtSecret: YnJld2Zsb3ctc3VwZXItc2VjcmV0LWp3dC1rZXktdGhhdC1zaG91bGQtYmUtbG9uZy1hbmQtc2VjdXJlLWZvci1wcm9kdWN0aW9uLXVzZS1vbmx5
+
+  infrastructure:
+    namespace: brewflow-infra
+
+    postgresql:
+      host: postgres.brewflow-infra.svc.cluster.local
+      port: 5432
+      username: postgres
+      password: postgres
+      
+      databases:
+        users_db: users_db
+        orders_db: orders_db
+    
+    kafka:
+      bootstrapServers: kafka.brewflow-infra.svc.cluster.local:9092
+    
+    redis:
+      host: redis.brewflow-infra.svc.cluster.local
+      port: 6379
+    
+    observability:
+      namespace: brewflow-observability
+      tempo:
+        endpoint: http://tempo.brewflow-observability.svc.cluster.local:9411/api/v2/spans
+    
+    mail:
+      enabled: true
+      host: mailhog.brewflow-infra.svc.cluster.local
+      port: 1025
+      username: noreply@brewflow.local
+      auth: false
+      starttls: false
+
+
+  services:
+    userService:
+      name: user-service
+      namespace: brewflow
+      port: 8081
+      url: http://user-service:8081
+    
+    orderService:
+      name: order-service
+      namespace: brewflow
+      port: 8082
+      url: http://order-service:8082
+    
+    paymentService:
+      name: payment-service
+      namespace: brewflow
+      port: 8083
+      url: http://payment-service:8083
+    
+    notificationService:
+      name: notification-service
+      namespace: brewflow
+      port: 8084
+      url: http://notification-service:8084
+    
+    apiGateway:
+      name: api-gateway
+      namespace: brewflow
+      port: 8080
+      url: http://api-gateway:8080
+
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  
+  healthCheck:
+    startup:
+      path: /actuator/health/liveness
+      initialDelaySeconds: 20
+      periodSeconds: 3
+      timeoutSeconds: 3
+      failureThreshold: 20
+
+    liveness:
+      path: /actuator/health/liveness
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+
+    readiness:
+      path: /actuator/health/readiness
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 5
+
+
+  ingress:
+    enabled: true
+    className: nginx
+    host: brewflow.local
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "false"

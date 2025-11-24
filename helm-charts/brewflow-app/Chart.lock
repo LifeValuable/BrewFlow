@@ -1,0 +1,21 @@
+dependencies:
+- name: user-service
+  repository: file://./charts/user-service
+  version: 1.0.0
+- name: order-service
+  repository: file://./charts/order-service
+  version: 1.0.0
+- name: payment-service
+  repository: file://./charts/payment-service
+  version: 1.0.0
+- name: api-gateway
+  repository: file://./charts/api-gateway
+  version: 1.0.0
+- name: notification-service
+  repository: file://./charts/notification-service
+  version: 1.0.0
+- name: common
+  repository: file://./charts/common
+  version: 1.0.0
+digest: sha256:267e8ebe1a522e1055eb88e29a5bb76c9e30cfa89f7466ffd98f8088008b0713
+generated: "2025-11-10T13:45:32.526359509+03:00"

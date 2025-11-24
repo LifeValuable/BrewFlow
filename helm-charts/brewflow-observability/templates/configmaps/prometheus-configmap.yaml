@@ -1,0 +1,12 @@
+{{- if .Values.prometheus.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: prometheus
+data:
+  prometheus.yml: |
+{{ .Files.Get "observability/prometheus/prometheus.yml" | indent 4 }}
+{{- end }}

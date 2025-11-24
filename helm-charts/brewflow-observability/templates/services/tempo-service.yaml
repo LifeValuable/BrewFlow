@@ -1,0 +1,30 @@
+{{- if .Values.tempo.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempo
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: tempo
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.tempo.service.ports.tempo }}
+    targetPort: tempo
+    protocol: TCP
+    name: tempo
+  - port: {{ .Values.tempo.service.ports.zipkin }}
+    targetPort: zipkin
+    protocol: TCP
+    name: zipkin
+  - port: 4318
+    targetPort: otlp-http
+    protocol: TCP
+    name: otlp-http
+  - port: 4317
+    targetPort: otlp-grpc
+    protocol: TCP
+    name: otlp-grpc
+  selector:
+    app: tempo
+{{- end }}

@@ -1,0 +1,13 @@
+replicaCount: 1
+
+image:
+  repository: brewflow/notification-service
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8084
+
+env:
+  SPRING_PROFILES_ACTIVE: "k8s"

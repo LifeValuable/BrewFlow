@@ -1,0 +1,73 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: user-auth
+              uri: ${SERVICES_USER_SERVICE_URL}
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+
+            - id: user-profile
+              uri: ${SERVICES_USER_SERVICE_URL}
+              predicates:
+                - Path=/api/users/**
+              filters:
+                - StripPrefix=1
+
+            - id: order-products
+              uri: ${SERVICES_ORDER_SERVICE_URL}
+              predicates:
+                - Path=/api/products/**
+              filters:
+                - StripPrefix=1
+
+            - id: order-cart
+              uri: ${SERVICES_ORDER_SERVICE_URL}
+              predicates:
+                - Path=/api/cart/**
+              filters:
+                - StripPrefix=1
+
+            - id: order-orders
+              uri: ${SERVICES_ORDER_SERVICE_URL}
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - StripPrefix=1
+
+management:
+  observations:
+    http:
+      server:
+        requests:
+          name: http.server.requests
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 10ms,50ms,100ms,200ms,500ms,1s,2s,5s
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT}
+
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET}

@@ -3,6 +3,9 @@ package ru.lifevaluable.brewflow.order.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import ru.lifevaluable.brewflow.order.dto.CartItemResponse;
 import ru.lifevaluable.brewflow.order.dto.CartResponse;
@@ -35,6 +38,10 @@ public class CartService {
         return cartMapper.toDTO(items);
     }
 
+    @Retryable(
+            retryFor = {ConstraintViolationException.class},
+            maxAttempts = 2
+    )
     @Transactional
     public CartItemResponse addItemToCart(UUID userId, UUID productId, int quantity) {
         log.debug("Add item to cart: userId={}, productId={}, quantity={}", userId, productId, quantity);
@@ -47,26 +54,26 @@ public class CartService {
         if (product.getStockQuantity() < quantity)
             throw new InsufficientStockException(productId, quantity, product.getStockQuantity());
 
-        CartItemKey cartItemKey = new CartItemKey();
-        cartItemKey.setProductId(productId);
-        cartItemKey.setUserId(userId);
-
-        Optional<CartItem> cartItem = cartItemRepository.findById(cartItemKey);
+        Optional<CartItem> cartItem = cartItemRepository.findByIdWithLock(userId, productId);
         CartItem item;
         if (cartItem.isEmpty()) {
             log.debug("Creating new cart item: userId={}, productId={}", userId, productId);
+            CartItemKey cartItemKey = new CartItemKey();
+            cartItemKey.setProductId(productId);
+            cartItemKey.setUserId(userId);
+
             item = new CartItem();
             item.setId(cartItemKey);
-            item.setQuantity(0);
+            item.setQuantity(quantity);
             item.setProduct(product);
         }
         else {
             log.debug("Updating existing cart item: userId={}, productId={}, currentQuantity={}",
                     userId, productId, cartItem.get().getQuantity());
             item = cartItem.get();
+            item.setQuantity(item.getQuantity() + quantity);
         }
 
-        item.setQuantity(item.getQuantity() + quantity);
         cartItemRepository.save(item);
         log.info("Successfully added item to cart: userId={}, productId={}, quantity={}", userId, productId, quantity);
         return cartMapper.toDTO(item);

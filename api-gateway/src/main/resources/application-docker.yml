@@ -2,7 +2,7 @@ spring:
   cloud:
     gateway:
       server:
-        webflux:  # ← Новый формат!
+        webflux:
           routes:
             - id: user-service-route
               uri: http://user-service:8081

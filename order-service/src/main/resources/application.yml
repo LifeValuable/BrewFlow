@@ -88,11 +88,6 @@ logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} [%15.15t] %-5level [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n"
 
-app:
-  jwt:
-    secret: "YnJld2Zsb3ctc3VwZXItc2VjcmV0LWp3dC1rZXktdGhhdC1zaG91bGQtYmUtbG9uZy1hbmQtc2VjdXJlLWZvci1wcm9kdWN0aW9uLXVzZS1vbmx5"
-    expiration-ms: 86400000
-
 user-service:
   base-url: http://localhost:8081
   connect-timeout: 5000

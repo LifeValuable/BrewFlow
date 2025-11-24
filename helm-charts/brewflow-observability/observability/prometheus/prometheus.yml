@@ -1,0 +1,84 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: 'api-gateway'
+    dns_sd_configs:
+      - names:
+          - 'api-gateway-headless.brewflow.svc.cluster.local'
+        type: 'A'
+        port: 8080
+    metrics_path: '/actuator/prometheus'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'api-gateway:${1}'
+        action: replace
+      - replacement: 'api-gateway'
+        target_label: application
+
+  - job_name: 'user-service'
+    dns_sd_configs:
+      - names:
+          - 'user-service-headless.brewflow.svc.cluster.local'
+        type: 'A'
+        port: 8081
+    metrics_path: '/actuator/prometheus'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'user-service:${1}'
+        action: replace
+      - replacement: 'user-service'
+        target_label: application
+
+  - job_name: 'order-service'
+    dns_sd_configs:
+      - names:
+          - 'order-service-headless.brewflow.svc.cluster.local'
+        type: 'A'
+        port: 8082
+    metrics_path: '/actuator/prometheus'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'order-service:${1}'
+        action: replace
+      - replacement: 'order-service'
+        target_label: application
+
+  - job_name: 'payment-service'
+    dns_sd_configs:
+      - names:
+          - 'payment-service-headless.brewflow.svc.cluster.local'
+        type: 'A'
+        port: 8083
+    metrics_path: '/actuator/prometheus'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'payment-service:${1}'
+        action: replace
+      - replacement: 'payment-service'
+        target_label: application
+
+  - job_name: 'notification-service'
+    dns_sd_configs:
+      - names:
+          - 'notification-service-headless.brewflow.svc.cluster.local'
+        type: 'A'
+        port: 8084
+    metrics_path: '/actuator/prometheus'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'notification-service:${1}'
+        action: replace
+      - replacement: 'notification-service'
+        target_label: application
+
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

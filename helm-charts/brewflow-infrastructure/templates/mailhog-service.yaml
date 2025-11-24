@@ -1,0 +1,23 @@
+{{- if .Values.mailhog.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailhog
+  namespace: brewflow-infra
+  labels:
+    app: mailhog
+spec:
+  type: {{ .Values.mailhog.service.type }}
+  ports:
+    - name: smtp
+      port: {{ .Values.mailhog.ports.smtp }}
+      targetPort: {{ .Values.mailhog.ports.smtp }}
+      protocol: TCP
+    - name: http
+      port: {{ .Values.mailhog.ports.http }}
+      targetPort: {{ .Values.mailhog.ports.http }}
+      nodePort: {{ .Values.mailhog.service.nodePort }}
+      protocol: TCP
+  selector:
+    app: mailhog
+  {{- end }}

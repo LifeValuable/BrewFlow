@@ -1,0 +1,12 @@
+{{- if .Values.tempo.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tempo-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: tempo
+data:
+  tempo.yaml: |
+{{ .Files.Get "observability/tempo/tempo.yml" | indent 4 }}
+{{- end }}

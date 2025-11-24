@@ -5,13 +5,15 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
-import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,11 +26,7 @@ import ru.lifevaluable.brewflow.order.entity.OrderItem;
 import ru.lifevaluable.brewflow.order.entity.OrderStatus;
 import ru.lifevaluable.brewflow.order.entity.Product;
 import ru.lifevaluable.brewflow.order.event.OrderCreatedEvent;
-import ru.lifevaluable.brewflow.order.exception.EmptyCartException;
-import ru.lifevaluable.brewflow.order.exception.InsufficientStockException;
-import ru.lifevaluable.brewflow.order.exception.InvalidOrderStatusTransitionException;
-import ru.lifevaluable.brewflow.order.exception.OrderCreationFailedException;
-import ru.lifevaluable.brewflow.order.exception.OrderNotFoundException;
+import ru.lifevaluable.brewflow.order.exception.*;
 import ru.lifevaluable.brewflow.order.mapper.OrderMapper;
 import ru.lifevaluable.brewflow.order.repository.CartItemRepository;
 import ru.lifevaluable.brewflow.order.repository.OrderRepository;
@@ -47,9 +45,10 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrderFromCart(UUID userId, UserData userData) {
-        log.debug("Create order from cart: userId={}", userId);
+        log.debug("Create order from cart userId={}", userId);
         validateNotNull(userId, "User id");
         validateNotNull(userData, "User data");
+
         if (!userId.equals(userData.id())) {
             throw new IllegalArgumentException(
                     String.format("User id %s is not equal userData.id %s",
@@ -61,6 +60,29 @@ public class OrderService {
         if (cartItems.isEmpty())
             throw new EmptyCartException(userId);
 
+        List<UUID> productIds = cartItems.stream()
+                .map(item -> item.getProduct().getId())
+                .sorted()
+                .toList();
+
+        List<Product> lockedProducts = productRepository.findByIdInWithLockOrdered(productIds);
+        Map<UUID, Product> productMap = lockedProducts.stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        for (CartItem cartItem : cartItems) {
+            Product product = productMap.get(cartItem.getProduct().getId());
+            if (product == null) {
+                throw new ProductNotFoundException(cartItem.getProduct().getId());
+            }
+            if (product.getStockQuantity() < cartItem.getQuantity()) {
+                throw new InsufficientStockException(
+                        product.getId(),
+                        cartItem.getQuantity(),
+                        product.getStockQuantity()
+                );
+            }
+        }
+
         List<OrderItem> orderItems = orderMapper.cartItemToOrderItem(cartItems);
 
         Order order = new Order();
@@ -71,19 +93,15 @@ public class OrderService {
         order.setUserLastName(userData.lastName());
         order.setUserEmail(userData.email());
         order.setStatus(OrderStatus.RESERVED);
+
         evictAllProductsCache();
-        try {
-            for (OrderItem orderItem : orderItems) {
-                orderItem.setOrder(order);
-                Product product = orderItem.getProduct();
-                int reduced = productRepository.reduceStockQuantity(product.getId(), orderItem.getQuantity());
-                if (reduced == 0)
-                    throw new InsufficientStockException(product.getId(), orderItem.getQuantity(), product.getStockQuantity());
-                evictProductCache(product.getId());
-            }
-        }
-        catch (OptimisticLockException ex) {
-            throw new OrderCreationFailedException("Order cannot be processed due to inventory changes. Please try again.");
+
+        for (OrderItem orderItem : orderItems) {
+            orderItem.setOrder(order);
+            Product product = productMap.get(orderItem.getProduct().getId());
+            product.setStockQuantity(product.getStockQuantity() - orderItem.getQuantity());
+            productRepository.save(product);
+            evictProductCache(product.getId());
         }
 
         Order savedOrder = orderRepository.save(order);
@@ -158,18 +176,31 @@ public class OrderService {
         }
 
         evictAllProductsCache();
+
+        List<UUID> productIds = order.getItems().stream()
+                .map(item -> item.getProduct().getId())
+                .sorted()
+                .toList();
+
+        List<Product> lockedProducts = productRepository.findByIdInWithLockOrdered(productIds);
+        Map<UUID, Product> productMap = lockedProducts.stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
         order.setStatus(OrderStatus.CANCELLED);
+
         for (OrderItem item : order.getItems()) {
-            Product product = item.getProduct();
-            int newStock = product.getStockQuantity() + item.getQuantity();
-            product.setStockQuantity(newStock);
+            Product product = productMap.get(item.getProduct().getId());
+            product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
             productRepository.save(product);
             evictProductCache(product.getId());
-            log.debug("Returned {} units of {} to stock. New stock: {}",
-                    item.getQuantity(), product.getName(), newStock);
+
+            log.debug("Returned {} units of {} to stock. New stock = {}",
+                    item.getQuantity(), product.getName(), product.getStockQuantity());
         }
-        log.info("Order is cancelled: orderId={}, userId={}", orderId, userId);
+
+        log.info("Order is cancelled orderId={}, userId={}", orderId, userId);
     }
+
 
     public OrdersHistoryResponse getOrdersHistory(UUID userId) {
         log.debug("Get orders history: userId={}", userId);

@@ -1,0 +1,15 @@
+apiVersion: v2
+name: brewflow-observability
+description: Observability stack (Prometheus, Loki, Tempo, Grafana, Promtail)
+type: application
+version: 1.0.0
+appVersion: 1.0.0
+maintainers:
+  - name: BrewFlow Team
+keywords:
+  - observability
+  - prometheus
+  - loki
+  - tempo
+  - grafana
+  - promtail

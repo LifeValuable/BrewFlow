@@ -1,7 +1,8 @@
 package ru.lifevaluable.brewflow.order.repository;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import ru.lifevaluable.brewflow.order.entity.Product;
@@ -12,13 +13,7 @@ import java.util.UUID;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID> {
-    List<Product> findByIdIn(Collection<UUID> productIds);
-
-    @Modifying
-    @Query("UPDATE Product p SET p.stockQuantity = p.stockQuantity - :quantity WHERE p.id = :id AND p.stockQuantity >= :quantity")
-    int reduceStockQuantity(UUID id, Integer quantity);
-
-    @Modifying
-    @Query("UPDATE Product p SET p.stockQuantity = p.stockQuantity + :quantity WHERE p.id = :id")
-    int increaseStockQuantity(UUID id, Integer quantity);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Product p WHERE p.id IN :productIds ORDER BY p.id")
+    List<Product> findByIdInWithLockOrdered(Collection<UUID> productIds);
 }

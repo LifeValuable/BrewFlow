@@ -1,0 +1,99 @@
+global:
+  namespace: brewflow-observability
+  imagePullPolicy: IfNotPresent
+
+prometheus:
+  enabled: true
+  image:
+    repository: prom/prometheus
+    tag: latest
+  service:
+    port: 9090
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+loki:
+  enabled: true
+  image:
+    repository: grafana/loki
+    tag: latest
+  service:
+    port: 3100
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+tempo:
+  enabled: true
+  image:
+    repository: grafana/tempo
+    tag: latest
+  service:
+    ports:
+      tempo: 3200
+      zipkin: 9411
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 2Gi
+
+promtail:
+  enabled: true
+  image:
+    repository: grafana/promtail
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+grafana:
+  enabled: true
+  image:
+    repository: grafana/grafana
+    tag: latest
+  service:
+    port: 3000
+  adminUser: admin
+  adminPassword: admin
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+infrastructure:
+  namespace: brewflow
+  services:
+    user-service:
+      host: user-service.brewflow.svc.cluster.local
+      port: 8081
+    order-service:
+      host: order-service.brewflow.svc.cluster.local
+      port: 8082
+    payment-service:
+      host: payment-service.brewflow.svc.cluster.local
+      port: 8083
+    notification-service:
+      host: notification-service.brewflow.svc.cluster.local
+      port: 8084
+    api-gateway:
+      host: api-gateway.brewflow.svc.cluster.local
+      port: 8080

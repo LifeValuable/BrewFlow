@@ -41,9 +41,6 @@ public class Product {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @Version
-    private Long version;
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

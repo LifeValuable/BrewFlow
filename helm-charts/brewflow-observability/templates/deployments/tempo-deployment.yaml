@@ -1,0 +1,47 @@
+{{- if .Values.tempo.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempo
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: tempo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tempo
+  template:
+    metadata:
+      labels:
+        app: tempo
+    spec:
+      containers:
+      - name: tempo
+        image: "{{ .Values.tempo.image.repository }}:{{ .Values.tempo.image.tag }}"
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        args:
+          - -config.file=/etc/tempo/tempo.yaml
+        ports:
+        - name: tempo
+          containerPort: {{ .Values.tempo.service.ports.tempo }}
+        - name: zipkin
+          containerPort: {{ .Values.tempo.service.ports.zipkin }}
+        - name: otlp-http
+          containerPort: 4318
+        - name: otlp-grpc
+          containerPort: 4317
+        resources:
+          {{- toYaml .Values.tempo.resources | nindent 10 }}
+        volumeMounts:
+        - name: tempo-config
+          mountPath: /etc/tempo
+        - name: tempo-data
+          mountPath: /var/tempo
+      volumes:
+      - name: tempo-config
+        configMap:
+          name: tempo-config
+      - name: tempo-data
+        emptyDir: {}
+{{- end }}

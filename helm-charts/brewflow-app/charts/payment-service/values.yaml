@@ -1,0 +1,13 @@
+replicaCount: 1
+
+image:
+  repository: brewflow/payment-service
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8083
+
+env:
+  SPRING_PROFILES_ACTIVE: "k8s"
