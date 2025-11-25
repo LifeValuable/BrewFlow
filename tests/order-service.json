@@ -1,0 +1,1005 @@
+{
+	"info": {
+		"_postman_id": "32a2c40e-3750-4a44-9813-59653450d38f",
+		"name": "order-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39385445"
+	},
+	"item": [
+		{
+			"name": "00 - Prerequests",
+			"item": [
+				{
+					"name": "reset variables",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// 🧹 Order Service - Variables Reset (ТОЛЬКО в первом запросе)\r",
+									"console.log(\"🧹 Starting Order Service Collection - Clearing variables...\");\r",
+									"\r",
+									"// Список переменных для очистки\r",
+									"const variablesToClear = [\r",
+									"    \"product1_id\",\r",
+									"    \"product1_name\", \r",
+									"    \"product2_id\",\r",
+									"    \"product2_name\",\r",
+									"    \"product3_id\", \r",
+									"    \"product3_name\",\r",
+									"    \"order_id\",\r",
+									"    \"user_id\"\r",
+									"];\r",
+									"\r",
+									"// Очистка всех переменных\r",
+									"variablesToClear.forEach(variable => {\r",
+									"    // Collection\r",
+									"    if (pm.collectionVariables.get(variable)) {\r",
+									"        pm.collectionVariables.unset(variable);\r",
+									"        console.log(`🗑️ Cleared collection.${variable}`);\r",
+									"    }\r",
+									"\r",
+									"});\r",
+									"console.log(\"✅ Collection setup complete - variables cleared!\");\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "ya.ru",
+							"host": [
+								"ya",
+								"ru"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "01 - Catalog Exploration",
+			"item": [
+				{
+					"name": "Get Full Catalog",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Проверить что каталог не пустой",
+									"pm.test(\"Catalog is not empty\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"    pm.expect(response.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"// Сохранить первые 3 товара для тестирования",
+									"const products = pm.response.json();",
+									"if (products.length >= 3) {",
+									"    pm.collectionVariables.set(\"product1_id\", products[0].id);",
+									"    pm.collectionVariables.set(\"product1_name\", products[0].name);",
+									"    pm.collectionVariables.set(\"product2_id\", products[1].id);",
+									"    pm.collectionVariables.set(\"product2_name\", products[1].name);",
+									"    pm.collectionVariables.set(\"product3_id\", products[2].id);",
+									"    pm.collectionVariables.set(\"product3_name\", products[2].name);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{order-serviceURL}}/products",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product Details (Coffee 1)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{order-serviceURL}}/products/{{product1_id}}",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"products",
+								"{{product1_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product Details (Coffee 2)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{order-serviceURL}}/products/{{product2_id}}",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"products",
+								"{{product2_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02 - Cart Operations",
+			"item": [
+				{
+					"name": "Get Empty Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cart should be empty initially\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.items).to.be.an('array');",
+									"    pm.expect(response.items.length).to.equal(0);",
+									"    pm.expect(response.totalPrice).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/cart",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Coffee 1 to Cart (qty: 2)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Item added successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.productId).to.equal(pm.collectionVariables.get(\"product1_id\"));",
+									"    pm.expect(response.quantity).to.equal(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"{{product1_id}}\",\n    \"quantity\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{order-serviceURL}}/cart/items",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Coffee 2 to Cart (qty: 1)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"{{product2_id}}\",\n    \"quantity\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{order-serviceURL}}/cart/items",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add More Coffee 1 (qty: 1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Quantity should increase\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.quantity).to.equal(3); // 2 + 1",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"{{product1_id}}\",\n    \"quantity\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{order-serviceURL}}/cart/items",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart with Items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cart contains 2 different products\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.items).to.be.an('array');",
+									"    pm.expect(response.items.length).to.equal(2);",
+									"    pm.expect(response.totalPrice).to.be.greaterThan(0);",
+									"});",
+									"",
+									"// Найти количество первого кофе",
+									"const response = pm.response.json();",
+									"const coffee1 = response.items.find(item => item.productId === pm.collectionVariables.get(\"product1_id\"));",
+									"if (coffee1) {",
+									"    pm.test(\"Coffee 1 quantity should be 3\", function () {",
+									"        pm.expect(coffee1.quantity).to.equal(3);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/cart",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03 - Order Creation",
+			"item": [
+				{
+					"name": "Create Order from Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Order created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.id).to.exist;",
+									"    pm.expect(response.status).to.equal(\"RESERVED\");",
+									"    pm.expect(response.items).to.be.an('array');",
+									"    pm.expect(response.items.length).to.equal(2);",
+									"    ",
+									"    // Сохранить order ID для дальнейших тестов",
+									"    pm.collectionVariables.set(\"order_id\", response.id);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/orders",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart After Order Creation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cart should be empty after order creation\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.items).to.be.an('array');",
+									"    pm.expect(response.items.length).to.equal(0);",
+									"    pm.expect(response.totalPrice).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/cart",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Order details retrieved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.id).to.equal(pm.collectionVariables.get(\"order_id\"));",
+									"    pm.expect(response.items.length).to.equal(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/orders/{{order_id}}",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"orders",
+								"{{order_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Orders History",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Order appears in history\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.orders).to.be.an('array');",
+									"    pm.expect(response.orders.length).to.be.greaterThan(0);",
+									"    ",
+									"    const ourOrder = response.orders.find(order => order.id === pm.collectionVariables.get(\"order_id\"));",
+									"    pm.expect(ourOrder).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/orders",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"orders"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "04 - Cart Management",
+			"item": [
+				{
+					"name": "Add Coffee 3 to Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"{{product3_id}}\",\n    \"quantity\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{order-serviceURL}}/cart/items",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart Before Removal",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/cart",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Coffee 3 from Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Item removed successfully\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/cart/items/{{product3_id}}",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart",
+								"items",
+								"{{product3_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart After Removal",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cart should be empty after removal\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.items).to.be.an('array');",
+									"    pm.expect(response.items.length).to.equal(0);",
+									"    pm.expect(response.totalPrice).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/cart",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Multiple Items for Clear Test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"{{product1_id}}\",\n    \"quantity\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{order-serviceURL}}/cart/items",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Second Item for Clear Test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"{{product2_id}}\",\n    \"quantity\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{order-serviceURL}}/cart/items",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart Before Clear",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cart should have items before clear\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.items.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/cart",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clear Entire Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cart cleared successfully\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/cart",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart After Clear",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Cart should be empty after clear\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.items).to.be.an('array');",
+									"    pm.expect(response.items.length).to.equal(0);",
+									"    pm.expect(response.totalPrice).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/cart",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"cart"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "05 - Internal API",
+			"item": [
+				{
+					"name": "Get Updated Order Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Order status should be PAYMENT_PROCESSED\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.status).to.equal(\"PAYMENT_PROCESSED\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{order-serviceURL}}/orders/{{order_id}}",
+							"host": [
+								"{{order-serviceURL}}"
+							],
+							"path": [
+								"orders",
+								"{{order_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					"// Проверка наличия JWT токена перед каждым запросом",
+					"if (!pm.globals.get(\"jwt_token\") && pm.info.requestName !== \"Get Full Catalog\" && pm.info.requestName !== \"Get Product Details (Coffee 1)\" && pm.info.requestName !== \"Get Product Details (Coffee 2)\") {",
+					"    console.warn(\"⚠️  JWT token not found. Please login first in User Service.\");",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					"// Глобальные проверки для всех запросов",
+					"pm.test(\"Response time is less than 2000ms\", function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+					"});",
+					"",
+					"// Логирование для отладки",
+					"console.log(`✅ ${pm.info.requestName}: ${pm.response.status} ${pm.response.code}`);"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "order-serviceURL",
+			"value": "http://localhost:8081"
+		},
+		{
+			"key": "user_id",
+			"value": ""
+		},
+		{
+			"key": "product1_id",
+			"value": ""
+		},
+		{
+			"key": "product1_name",
+			"value": ""
+		},
+		{
+			"key": "product2_id",
+			"value": ""
+		},
+		{
+			"key": "product2_name",
+			"value": ""
+		},
+		{
+			"key": "product3_id",
+			"value": ""
+		},
+		{
+			"key": "product3_name",
+			"value": ""
+		},
+		{
+			"key": "order_id",
+			"value": ""
+		}
+	]
+}
