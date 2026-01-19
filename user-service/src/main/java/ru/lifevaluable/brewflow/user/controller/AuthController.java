@@ -28,7 +28,7 @@ public class AuthController {
     private final UserService userService;
 
     @Operation(summary = "Регистрация нового пользователя")
-    @ApiResponse(responseCode = "200", description = "Пользователь зарегистрирован")
+    @ApiResponse(responseCode = "201", description = "Пользователь зарегистрирован")
     @ApiResponse(responseCode = "409", description = "Данная почта уже используется")
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(
@@ -39,7 +39,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Логин в систему")
-    @ApiResponse(responseCode = "201", description = "Вход выполнен успешно")
+    @ApiResponse(responseCode = "200", description = "Вход выполнен успешно")
     @ApiResponse(responseCode = "401", description = "Неверный логин или пароль")
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
