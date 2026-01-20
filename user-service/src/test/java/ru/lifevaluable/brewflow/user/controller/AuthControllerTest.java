@@ -25,7 +25,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -101,6 +102,116 @@ public class AuthControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errorCode").value("USER_ALREADY_EXISTS"))
                 .andExpect(jsonPath("$.message").value(containsString(request.email())));
+    }
+
+    @Test
+    @DisplayName("POST /auth/register должен вернуть 400, если email в неправильном формате")
+    public void register_WhenEmailIsInvalid_ShouldReturn400() throws Exception {
+        RegisterRequest request = new RegisterRequest(
+                "invalid_email.com",
+                "12345678",
+                "Ivan",
+                "Ivanov"
+        );
+
+        mockMvc.perform(post("/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("email")));
+
+        verify(userService, never()).register(any());
+    }
+
+    @Test
+    @DisplayName("POST /auth/register должен вернуть 400, если email пустой")
+    public void register_WhenEmailIsBlank_ShouldReturn400() throws Exception {
+        RegisterRequest request = new RegisterRequest(
+                " ",
+                "12345678",
+                "Ivan",
+                "Ivanov"
+        );
+
+        mockMvc.perform(post("/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("email")));
+    }
+
+    @Test
+    @DisplayName("POST /auth/register должен вернуть 400, если password пустой")
+    public void register_WhenPasswordIsBlank_ShouldReturn400() throws Exception {
+        RegisterRequest request = new RegisterRequest(
+                "test@example.com",
+                " ",
+                "Ivan",
+                "Ivanov"
+        );
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("password")));
+    }
+
+    @Test
+    @DisplayName("POST /auth/register должен вернуть 400, если password короче 8 символов")
+    public void register_WhenPasswordIsShort_ShouldReturn400() throws Exception {
+        RegisterRequest request = new RegisterRequest(
+                "test@example.com",
+                "1234567",
+                "Ivan",
+                "Ivanov"
+        );
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("password")));
+    }
+
+    @Test
+    @DisplayName("POST /auth/register должен вернуть 400, если имя пустое")
+    public void register_WhenFirstNameIsBlank_ShouldReturn400() throws Exception {
+        RegisterRequest request = new RegisterRequest(
+                "test@example.com",
+                "12345679",
+                " ",
+                "Ivanov"
+        );
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("firstName")));
+    }
+
+    @Test
+    @DisplayName("POST /auth/register должен вернуть 400, если фамилия пустая")
+    public void register_WhenLastNameIsBlank_ShouldReturn400() throws Exception {
+        RegisterRequest request = new RegisterRequest(
+                "test@example.com",
+                "12345679",
+                "Ivan",
+                " "
+        );
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("lastName")));
     }
 
     @Test
