@@ -256,4 +256,57 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.message").isNotEmpty());
     }
 
+    @Test
+    @DisplayName("POST /auth/login должен вернуть 400, если email в неправильном формате")
+    public void login_WhenEmailIsInvalid_ShouldReturn400() throws Exception {
+        LoginRequest request = new LoginRequest(
+                "ivalid_email.com",
+                "12345678"
+        );
+
+        mockMvc.perform(post("/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("email")));
+
+        verify(userService, never()).login(any());
+    }
+
+    @Test
+    @DisplayName("POST /auth/login должен вернуть 400, если email пустой")
+    public void login_WhenEmailIsBlank_ShouldReturn400() throws Exception {
+        LoginRequest request = new LoginRequest(
+                " ",
+                "12345678"
+        );
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("email")));
+
+        verify(userService, never()).login(any());
+    }
+
+    @Test
+    @DisplayName("POST /auth/login должен вернуть 400, если пароль пустой")
+    public void login_WhenPasswordIsBlank_ShouldReturn400() throws Exception {
+        LoginRequest request = new LoginRequest(
+                "test@example.com",
+                " "
+        );
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().is4xxClientError())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("password")));
+
+        verify(userService, never()).login(any());
+    }
 }
