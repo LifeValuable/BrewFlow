@@ -2,6 +2,7 @@ package ru.lifevaluable.brewflow.user.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,8 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class JwtAuthenticationFilterTest {
@@ -71,7 +71,7 @@ public class JwtAuthenticationFilterTest {
     @Test
     @DisplayName("Должен вызвать следующий фильтр из цепочки даже при исключении")
     public void doFilterInternal_WhenGotException_ShouldContinueFilterChain() throws ServletException, IOException {
-        MockHttpServletRequest request = new MockHttpServletRequest();
+        HttpServletRequest request = mock(HttpServletRequest.class);
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         when(request.getHeader("X-User-Email")).thenThrow(new RuntimeException("Unexpected error"));
