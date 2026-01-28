@@ -1,6 +1,5 @@
 package ru.lifevaluable.brewflow.user.security;
 
-import java.security.Key;
 import java.util.Date;
 
 import io.jsonwebtoken.Jwts;
@@ -10,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.lifevaluable.brewflow.user.entity.User;
 
+import javax.crypto.SecretKey;
+
 @Component
 public class JwtUtil {
     @Value("${app.jwt.secret}")
@@ -18,7 +19,7 @@ public class JwtUtil {
     @Value("${app.jwt.expiration-ms}")
     private int jwtExpirationMs;
 
-    private Key getSigningKey() {
+    private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
