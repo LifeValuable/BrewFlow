@@ -73,13 +73,6 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.email").value(response.email()));
     }
 
-//    @Test
-//    @DisplayName("GET /users/profile должен вернуть 401, если отсутствуют заголовки аутентификации")
-//    void getProfile_WhenAuthenticationHeadersMissing_ShouldReturn401() throws Exception {
-//        mockMvc.perform(get("/users/profile")
-//                    .contentType(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isUnauthorized());
-//    }
 
     @Test
     @DisplayName("GET /user/profile должен вернуть 404, если пользователь не найден")
@@ -95,25 +88,4 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.errorCode").value("USER_NOT_FOUND"))
                 .andExpect(jsonPath("$.message").value(containsString(email)));
     }
-
-//    @Test
-//    @DisplayName("GET /users/profile должен вернуть 200 и для роли админа")
-//    void getProfile_WhenRoleIsAdmin_ShouldReturn200() throws Exception {
-//        UserProfileResponse response = new UserProfileResponse(
-//                UUID.randomUUID(),
-//                "admin@example.com",
-//                "Admin",
-//                "Adminov",
-//                LocalDateTime.now()
-//        );
-//
-//        when(userService.getProfile(response.email())).thenReturn(response);
-//
-//        mockMvc.perform(get("/users/profile")
-//                        .header("X-User-Email", response.email())
-//                        .header("X-User-Role", "ADMIN")
-//                        .contentType(MediaType.APPLICATION_JSON))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.email").value(response.email()));
-//    }
 }
