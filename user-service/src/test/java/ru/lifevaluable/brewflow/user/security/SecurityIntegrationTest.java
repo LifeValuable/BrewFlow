@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = UserController.class) // Явно укажи ОДИН контроллер
+@WebMvcTest(controllers = UserController.class)
 @Import(SecurityConfig.class)
 public class SecurityIntegrationTest {
     @Autowired
@@ -35,9 +35,6 @@ public class SecurityIntegrationTest {
 
     @MockitoBean
     private JwtUtil jwtUtil;
-
-    @MockitoBean
-    private JwtAuthenticationFilter jwtAuthenticationFilter; // Мокаем сам фильтр
 
 
     @ParameterizedTest
