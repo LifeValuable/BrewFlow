@@ -36,7 +36,7 @@ public class SecurityConfig {
                     .requestMatchers("/auth/**").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                    .requestMatchers("/internal/**").permitAll()
+                    .requestMatchers("/internal/**").denyAll()
                     .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
