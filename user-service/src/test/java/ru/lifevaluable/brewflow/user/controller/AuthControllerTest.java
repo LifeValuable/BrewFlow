@@ -86,7 +86,7 @@ public class AuthControllerTest {
 
     @Test
     @DisplayName("POST /auth/register должен вернуть 409, если пользователь уже зарегистрирован")
-    public void register_WhenEmailIsBusy_ShouldReturn201() throws Exception {
+    public void register_WhenEmailIsBusy_ShouldReturn409() throws Exception {
         RegisterRequest request = new RegisterRequest(
                 "busy@email.com",
                 "12345678",
